@@ -1,31 +1,50 @@
-pipeline { 
-    agent any 
-    stages { 
-        stage('Build') { 
-            steps { 
-                echo "Build Docker Image" 
-                bat "docker build -t mypythonflaskapp ." 
-            } 
-        } 
 
-        stage('Run') { 
-            steps { 
-                echo "Run application in Docker Container" 
+pipeline {
+    agent any
 
-                bat "docker rm -f mycontainer || exit 0"
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker Image"
+                bat "docker build -t akshayaaaaaaaaaaaaaaaaaaaaaaa/mypythonflaskapp:latest ."
+            }
+        }
 
-                bat "docker run -d -p 5000:5000 --name mycontainer mypythonflaskapp"
-            } 
-        } 
-    } 
+        stage('Docker Login') {
+            steps {
+                bat "docker login -u akshayaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+        }
 
-    post { 
-        success { 
-            echo 'Pipeline completed successfully!' 
-        } 
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                echo "Pushing Docker Image to Docker Hub"
+                bat "docker push akshayaaaaaaaaaaaaaaaaaaaaaaa/mypythonflaskapp:latest"
+            }
+        }
 
-        failure { 
-            echo 'Pipeline failed. Please check the logs.' 
-        } 
-    } 
+        stage('Deploy to Kubernetes') {
+            steps {
+                bat "kubectl apply -f deployment.yaml --validate=false"
+                bat "kubectl apply -f service.yaml"
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                bat "kubectl rollout status deployment/kubedemoapp-deployment"
+                bat "kubectl get pods -o wide"
+                bat "kubectl get svc kubedemoapp-service"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the logs.'
+        }
+    }
 }
