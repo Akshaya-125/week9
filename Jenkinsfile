@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -12,7 +11,13 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                bat "docker login -u akshayaaaaaaaaaaaaaaaaaaaaaaa"
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                }
             }
         }
 
